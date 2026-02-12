@@ -3,50 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>情書豪華版 - 最終重生版</title>
+    <title>情書豪華版 - 優化修正版</title>
     <style>
-        :root { --gold: #f1c40f; --red: #e74c3c; --blue: #3498db; --dark: #2c3e50; }
-        body { font-family: sans-serif; background: #1a1a2e; color: white; display: flex; justify-content: center; padding: 20px; }
-        .game-card { background: var(--dark); width: 100%; max-width: 800px; border-radius: 15px; padding: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid var(--gold); }
-        h1 { text-align: center; color: var(--gold); text-shadow: 2px 2px 4px black; }
+        :root { --gold: #f1c40f; --red: #e74c3c; --blue: #3498db; --dark: #2c3e50; --bg: #1a1a2e; }
+        body { font-family: sans-serif; background: var(--bg); color: white; display: flex; justify-content: center; padding: 10px; margin: 0; }
+        .game-card { background: var(--dark); width: 100%; max-width: 800px; border-radius: 15px; padding: 20px; box-shadow: 0 0 20px rgba(0,0,0,0.5); border: 2px solid var(--gold); margin-top: 10px; }
+        h1 { text-align: center; color: var(--gold); margin-bottom: 10px; font-size: 24px; }
         
-        /* 日誌與狀態 */
-        #log { background: #16213e; height: 150px; overflow-y: auto; padding: 10px; border-radius: 10px; margin: 15px 0; border-left: 5px solid var(--gold); display: flex; flex-direction: column-reverse; }
-        .log-msg { margin: 3px 0; border-bottom: 1px solid #0f3460; font-size: 14px; }
+        #log { background: #16213e; height: 180px; overflow-y: auto; padding: 10px; border-radius: 10px; margin: 15px 0; border-left: 5px solid var(--gold); display: flex; flex-direction: column-reverse; }
+        .log-msg { margin: 5px 0; border-bottom: 1px solid #0f3460; font-size: 14px; line-height: 1.4; }
         .highlight { color: var(--gold); font-weight: bold; }
+        .npc-msg { color: #a29bfe; font-style: italic; }
 
-        /* 玩家面板 */
-        .player-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px; }
-        .p-box { background: #0f3460; padding: 15px; border-radius: 12px; text-align: center; border: 2px solid transparent; transition: 0.3s; }
-        .p-box.active { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); transform: scale(1.02); }
+        .player-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+        .p-box { background: #0f3460; padding: 10px; border-radius: 12px; text-align: center; border: 2px solid transparent; position: relative; }
+        .p-box.active { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
         .p-box.out { opacity: 0.3; filter: grayscale(1); }
         .p-box.protected { border-color: #2ecc71; }
+        .p-box.protected::after { content: "🛡️"; position: absolute; top: 5px; right: 5px; }
 
-        /* 動作按鈕 */
         .hand { margin-top: 10px; display: flex; flex-direction: column; gap: 5px; }
         button { background: var(--red); color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; font-weight: bold; }
         button:hover:not(:disabled) { background: #c0392b; }
-        button:disabled { background: #555; cursor: not-allowed; }
         
         .setup-ui { text-align: center; padding: 50px; }
-        input { padding: 10px; width: 50px; border-radius: 5px; border: none; font-size: 18px; }
+        input { padding: 10px; width: 60px; border-radius: 5px; border: none; font-size: 18px; text-align: center; }
     </style>
 </head>
 <body>
 
 <div class="game-card">
-    <h1>💌 情書：豪華 32 張版</h1>
+    <h1>💌 情書：豪華版 (32張)</h1>
 
     <div id="setup" class="setup-ui">
-        <h2>準備開始</h2>
-        <p>請設定人數 (2-8人)</p>
+        <h2>設定遊玩人數</h2>
         <input type="number" id="pCount" value="4" min="2" max="8">
         <br><br>
-        <button onclick="bootGame()" style="font-size: 20px; padding: 15px 30px;">啟動遊戲</button>
+        <button onclick="bootGame()" style="font-size: 18px; padding: 12px 24px;">開始遊戲</button>
     </div>
 
     <div id="main" style="display: none;">
-        <div style="display: flex; justify-content: space-between; padding: 5px; font-weight: bold; color: var(--gold);">
+        <div style="display: flex; justify-content: space-between; padding: 5px; font-weight: bold; color: var(--gold); font-size: 14px;">
             <span id="deck-info">🎴 剩餘: 0</span>
             <span id="dir-info">🔄 方向: 等待中</span>
         </div>
@@ -69,35 +66,28 @@
     function bootGame() {
         const num = parseInt(document.getElementById('pCount').value);
         if (num < 2 || num > 8) return;
-
-        // 1. 洗牌
         deck = [];
         CARD_DATA.forEach(c => { for(let i=0; i<c.count; i++) deck.push({...c}); });
         deck.sort(() => Math.random() - 0.5);
-
-        // 2. 初始化玩家
         players = Array.from({length: num}, (_, i) => ({
             id: i, name: i === 0 ? "我(玩家0)" : `NPC ${i}`,
             hand: [deck.pop()], isOut: false, isProt: false, isNPC: i !== 0
         }));
-
         document.getElementById('setup').style.display = 'none';
         document.getElementById('main').style.display = 'block';
-        
-        addLog("🎲 系統正在進行開局猜拳...");
+        addLog("🎲 正在進行開局猜拳...");
         setTimeout(resolveRPS, 1000);
     }
 
     function resolveRPS() {
         currentIdx = Math.floor(Math.random() * players.length);
-        addLog(`🏆 猜拳勝利者是：<span class="highlight">${players[currentIdx].name}</span>`, true);
-
+        addLog(`🏆 猜拳勝利：<span class="highlight">${players[currentIdx].name}</span>`, true);
         if (players[currentIdx].isNPC) {
             dir = Math.random() > 0.5 ? 1 : -1;
             addLog(`${players[currentIdx].name} 決定方向：${dir === 1 ? '順時針' : '逆時針'}`);
             startTurn();
         } else {
-            addLog("你是贏家，請點擊日誌區按鈕決定方向：");
+            addLog("你是贏家，請選擇方向：");
             const btnBox = document.createElement('div');
             btnBox.innerHTML = `<button onclick="chooseDir(1)">順時針</button> <button onclick="chooseDir(-1)">逆時針</button>`;
             document.getElementById('log').prepend(btnBox);
@@ -106,110 +96,142 @@
 
     function chooseDir(d) {
         dir = d;
-        addLog(`方向已定：${dir === 1 ? '順時針' : '逆時針'}`);
+        addLog(`方向設定為：${dir === 1 ? '順時針' : '逆時針'}`);
         startTurn();
     }
 
     async function startTurn() {
         if (isOver) return;
         let p = players[currentIdx];
-        p.isProt = false; // 移除保護
+        p.isProt = false; // 回合開始，侍女失效
 
         if (deck.length > 0) {
             p.hand.push(deck.pop());
-            // 雙公主獲勝條件
             if (p.hand.filter(c => c.v === 8).length === 2) {
-                addLog(`🎊 ${p.name} 持有兩張公主，獲得最終勝利！`, true);
+                addLog(`🎊 ${p.name} 同時持有兩位公主！獲得最終勝利！`, true);
                 isOver = true; updateUI(); return;
             }
         } else {
-            addLog("🎴 牌庫已空，比大小結算！");
-            let winners = players.filter(pl => !pl.isOut).sort((a,b) => b.hand[0].v - a.hand[0].v);
-            addLog(`🏆 獲勝者是：${winners[0].name}`, true);
-            isOver = true; updateUI(); return;
+            concludeGame(); return;
         }
 
         updateUI();
-        if (p.isNPC) { await new Promise(r => setTimeout(r, 1200)); npcPlay(p); }
+        if (p.isNPC) {
+            addLog(`<span class="npc-msg">${p.name} 正在思考...</span>`);
+            await sleep(2500); // NPC 動作變慢：思考 2.5 秒
+            npcPlay(p);
+        }
     }
 
     function npcPlay(p) {
         let cardIdx = 0;
         // 伯爵夫人強迫規則 (七)
-        if (p.hand.some(c => c.v === 7) && p.hand.some(c => c.v === 5 || c.v === 6)) {
-            cardIdx = p.hand.findIndex(c => c.v === 7);
+        const hasRoyalty = p.hand.some(c => c.v === 5 || c.v === 6);
+        const ladyIdx = p.hand.findIndex(c => c.v === 7);
+        if (ladyIdx !== -1 && hasRoyalty) {
+            cardIdx = ladyIdx;
         } else {
             cardIdx = p.hand[0].v === 8 ? 1 : 0;
         }
         playCard(p.id, cardIdx);
     }
 
-    function playCard(pIdx, cIdx) {
+    async function playCard(pIdx, cIdx) {
         if (isOver || pIdx !== currentIdx) return;
         let p = players[pIdx];
         let card = p.hand[cIdx];
 
         // 伯爵夫人檢查
         if (card.v !== 7 && p.hand.some(c => c.v === 7) && p.hand.some(c => c.v === 5 || c.v === 6)) {
-            if (!p.isNPC) alert("手上有國王或王子，必須先出伯爵夫人！");
+            if (!p.isNPC) alert("規則限制：手中有王子或國王時，必須出伯爵夫人！");
             return;
         }
 
         card = p.hand.splice(cIdx, 1)[0];
         addLog(`${p.name} 打出了 [${card.name}]`);
+        updateUI();
+        await sleep(800); // 讓玩家看清楚打出的牌
 
-        // 角色功能執行
         switch(card.v) {
             case 1: // 衛兵
-                let t1 = getT(pIdx);
+                let t1 = await selectTarget(pIdx, "衛兵：請選擇要猜測的人編號");
                 if (t1 !== null) {
-                    let g = p.isNPC ? Math.floor(Math.random()*7)+2 : prompt("猜一個身分(2-8):");
-                    if (players[t1].hand[0].v == g) { addLog(`🎯 猜中！${players[t1].name} 出局`); players[t1].isOut = true; }
-                    else { addLog("💨 猜錯了"); }
+                    let g = p.isNPC ? Math.floor(Math.random()*7)+2 : prompt(`你要猜 ${players[t1].name} 是什麼？(輸入2-8，不能猜衛兵)`);
+                    if (g == 1) alert("不能猜衛兵！本次效果浪費了。");
+                    else if (players[t1].hand[0].v == g) {
+                        addLog(`🎯 猜中了！${players[t1].name} 是 ${g} 號，淘汰！`, true);
+                        players[t1].isOut = true;
+                    } else addLog(`💨 猜錯了，${players[targetId]?.name || '目標'} 不是 ${g} 號。`);
                 } break;
             case 2: // 神父
-                let t2 = getT(pIdx);
-                if (t2 !== null && !p.isNPC) alert(`${players[t2].name} 是 [${players[t2].hand[0].name}]`);
+                let t2 = await selectTarget(pIdx, "神父：請選擇要看牌的人編號");
+                if (t2 !== null && !p.isNPC) alert(`${players[t2].name} 的手牌是：${players[t2].hand[0].name}`);
                 break;
             case 3: // 男爵
-                let t3 = getT(pIdx);
+                let t3 = await selectTarget(pIdx, "男爵：請選擇要比大小的人編號");
                 if (t3 !== null) {
                     let v1 = p.hand[0].v, v2 = players[t3].hand[0].v;
-                    if (v1 > v2) { addLog(`💀 ${players[t3].name} 點數小，出局`); players[t3].isOut = true; }
-                    else if (v1 < v2) { addLog(`💀 ${p.name} 點數小，出局`); p.isOut = true; }
+                    addLog(`⚔️ ${p.name} 與 ${players[t3].name} 比牌...`);
+                    await sleep(1000);
+                    if (v1 > v2) { addLog(`💀 ${players[t3].name} 點數小，淘汰！`); players[t3].isOut = true; }
+                    else if (v1 < v2) { addLog(`💀 ${p.name} 點數小，淘汰！`); p.isOut = true; }
+                    else addLog("⚖️ 平手，無事發生。");
                 } break;
-            case 4: p.isProt = true; addLog(`${p.name} 獲得保護`); break;
+            case 4: p.isProt = true; addLog(`${p.name} 獲得侍女保護。`); break;
             case 5: // 王子
-                let t5 = p.isNPC ? pIdx : prompt(`選編號棄牌(0-${players.length-1}):`);
-                if (players[t5]) {
+                let t5 = p.isNPC ? pIdx : prompt(`王子：選一人棄牌 (0-${players.length-1})，可以選自己：`);
+                if (players[t5] && !players[t5].isOut) {
                     addLog(`${players[t5].name} 棄掉 [${players[t5].hand[0].name}]`);
-                    if (players[t5].hand[0].v === 8) { players[t5].isOut = true; addLog("那是公主！出局"); }
-                    else { players[t5].hand = [deck.pop()]; }
+                    if (players[t5].hand[0].v === 8) { players[t5].isOut = true; addLog("😱 是公主！直接淘汰！"); }
+                    else { players[t5].hand = deck.length > 0 ? [deck.pop()] : []; }
                 } break;
             case 6: // 國王
-                let t6 = getT(pIdx);
+                let t6 = await selectTarget(pIdx, "國王：請選擇要交換手牌的人編號");
                 if (t6 !== null) {
                     let tmp = p.hand[0]; p.hand[0] = players[t6].hand[0]; players[t6].hand[0] = tmp;
-                    addLog(`🤝 與 ${players[t6].name} 交換手牌`);
+                    addLog(`🤝 與 ${players[t6].name} 交換了手牌。`);
                 } break;
-            case 8: p.isOut = true; addLog("😱 棄掉公主！出局"); break;
+            case 8: p.isOut = true; addLog("😱 棄掉公主！淘汰！"); break;
         }
 
-        // 結算與換人
-        if (players.filter(pl => !pl.isOut).length <= 1) {
-            let win = players.filter(pl => !pl.isOut)[0];
-            addLog(`🏁 遊戲結束，獲勝者：${win ? win.name : "無"}`, true);
-            isOver = true; updateUI(); return;
-        }
-
+        if (checkVictory()) return;
         currentIdx = (currentIdx + dir + players.length) % players.length;
         while(players[currentIdx].isOut) currentIdx = (currentIdx + dir + players.length) % players.length;
-        setTimeout(startTurn, 1000);
+        setTimeout(startTurn, 1200);
     }
 
-    function getT(me) {
-        let v = players.filter(pl => !pl.isOut && !pl.isProt && pl.id !== me);
-        return v.length > 0 ? v[0].id : null;
+    // 核心工具：選擇目標 (過濾掉出局與侍女)
+    async function selectTarget(meIdx, msg) {
+        let valids = players.filter(pl => !pl.isOut && !pl.isProt && pl.id !== meIdx);
+        if (valids.length === 0) {
+            addLog("❌ 沒有可選取的目標（皆受保護或已出局）。");
+            return null;
+        }
+        if (players[meIdx].isNPC) return valids[Math.floor(Math.random() * valids.length)].id;
+        
+        let validIds = valids.map(v => v.id).join(", ");
+        let input = prompt(`${msg}\n可選編號：[ ${validIds} ]`);
+        if (input !== null && players[input] && !players[input].isOut && !players[input].isProt && input != meIdx) {
+            return parseInt(input);
+        }
+        alert("無效選擇！請輸入可選的編號。");
+        return null;
+    }
+
+    function checkVictory() {
+        let alive = players.filter(pl => !pl.isOut);
+        if (alive.length === 1) {
+            addLog(`🏁 遊戲結束！生存者：${alive[0].name}`, true);
+            isOver = true; updateUI(); return true;
+        }
+        return false;
+    }
+
+    function concludeGame() {
+        addLog("🎴 牌庫空了，比點數！");
+        let winners = players.filter(pl => !pl.isOut).sort((a,b) => b.hand[0].v - a.hand[0].v);
+        addLog(`🏆 贏家：${winners[0].name}`, true);
+        isOver = true; updateUI();
     }
 
     function updateUI() {
@@ -222,7 +244,9 @@
             div.className = `p-box ${p.isOut ? 'out' : ''} ${i === currentIdx ? 'active' : ''} ${p.isProt ? 'protected' : ''}`;
             let btns = "";
             if (!p.isOut && !p.isNPC && i === currentIdx) {
-                p.hand.forEach((c, ci) => { btns += `<button onclick="playCard(${i},${ci})">${c.name} (${c.v})</button>`; });
+                p.hand.forEach((c, ci) => { 
+                    btns += `<button onclick="playCard(${i},${ci})">${c.name} (${c.v})</button>`; 
+                });
             } else if (!p.isOut) { btns = "🎴 持卡中"; }
             div.innerHTML = `<strong>${p.name}</strong><br>${btns}`;
             container.appendChild(div);
@@ -236,6 +260,7 @@
         d.innerHTML = `> ${m}`;
         l.prepend(d);
     }
+    function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 </script>
 
 </body>
