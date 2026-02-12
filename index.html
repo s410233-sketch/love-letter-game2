@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>情書：完全體響應式版</title>
+    <title>情書：進階競技版</title>
     <style>
         :root { 
             --red: #e74c3c; --dark: #0a0a0a; --gold: #f1c40f;
@@ -19,11 +19,14 @@
         .btn { padding: 12px 25px; margin: 8px; font-size: 1rem; cursor: pointer; border: 1px solid white; background: none; color: white; border-radius: 5px; width: 100%; max-width: 220px; font-weight: bold; }
         .btn-primary { border-color: var(--red); color: var(--red); }
         .btn-gold { border-color: var(--gold); color: var(--gold); }
+        .btn-cancel { border-color: #777; color: #777; }
+
+        .input-box { padding: 12px; width: 220px; background: #222; border: 1px solid var(--gold); color: white; text-align: center; font-size: 18px; border-radius: 5px; margin-bottom: 15px; }
 
         .rule-content { text-align: left; max-width: 450px; background: #111; padding: 15px; border-radius: 10px; font-size: 0.85rem; overflow-y: auto; margin-bottom: 15px; border: 1px solid #333; }
         .rule-item { margin-bottom: 6px; border-bottom: 1px solid #222; padding-bottom: 4px; }
 
-        /* --- 遊戲主區域 --- */
+        /* --- 遊戲區域 --- */
         .game-world { flex: 1; position: relative; background: radial-gradient(circle, #1a4a3e 0%, #0a0a12 100%); overflow: hidden; }
         .side-log { width: 180px; background: #050505; border-left: 1px solid #333; display: flex; flex-direction: column; padding: 10px; z-index: 10; }
         @media (max-width: 768px) { .side-log { display: none; } }
@@ -45,7 +48,7 @@
         .card-val { position: absolute; top: 2px; left: 2px; background: var(--gold); color: black; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; font-weight: bold; }
 
         /* 大字報 */
-        #announcer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 320px; background: rgba(0,0,0,0.95); border: 1px solid #fff; z-index: 4000; display: none; flex-direction: column; align-items: center; padding: 20px; border-radius: 10px; }
+        #announcer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 350px; background: rgba(0,0,0,0.95); border: 1px solid #fff; z-index: 4000; display: none; flex-direction: column; align-items: center; padding: 25px; border-radius: 10px; }
     </style>
 </head>
 <body>
@@ -59,36 +62,39 @@
 <div id="screen-rules" class="overlay-screen hidden">
     <h2 style="color: var(--gold);">角色能力總覽</h2>
     <div class="rule-content">
-        <div class="rule-item"><b>👑 雙公主勝利:</b> 手中同時持有兩張公主時，立即獲勝。</div>
+        <div class="rule-item"><b>👑 雙公主勝利:</b> 手中持有兩張公主時，立即獲勝。</div>
         <div class="rule-item"><b>(8) 公主:</b> 打出或棄掉即淘汰。</div>
-        <div class="rule-item"><b>(7) 伯爵夫人:</b> 若手上有王子或國王必須打出。</div>
+        <div class="rule-item"><b>(7) 伯爵夫人:</b> 若手上有王子或國王必須打出此牌。</div>
         <div class="rule-item"><b>(6) 國王:</b> 與一名玩家交換手牌。</div>
-        <div class="rule-item"><b>(5) 王子:</b> 指定玩家棄掉手牌並重抽。</div>
-        <div class="rule-item"><b>(4) 侍女:</b> 保護自己一輪。</div>
-        <div class="rule-item"><b>(3) 男爵:</b> 與玩家比點數，小者淘汰。</div>
-        <div class="rule-item"><b>(2) 神父:</b> 查看一名玩家手牌。</div>
-        <div class="rule-item"><b>(1) 衛兵:</b> 猜玩家手牌點數（不能猜1）。</div>
+        <div class="rule-item"><b>(5) 王子:</b> 指定玩家（含自己）棄牌並重抽。</div>
+        <div class="rule-item"><b>(4) 侍女:</b> 保護自己一輪，不受其他卡牌效果影響。</div>
+        <div class="rule-item"><b>(3) 男爵:</b> 與玩家私下比牌，小者淘汰。</div>
+        <div class="rule-item"><b>(2) 神父:</b> 查看一名玩家的手牌。</div>
+        <div class="rule-item"><b>(1) 衛兵:</b> 猜玩家點數（不可猜1），對則其淘汰。</div>
     </div>
     <button class="btn" onclick="closeRules()">返回</button>
 </div>
 
 <div id="screen-setup" class="overlay-screen hidden">
     <h2>遊戲設定</h2>
+    <p>你的姓名</p>
+    <input type="text" id="pName" value="玩家" class="input-box">
     <p>參與人數 (2-8人)</p>
-    <input type="number" id="pCount" value="4" min="2" max="8" style="padding:10px; width:100px; text-align:center; font-size:20px; margin: 15px;">
+    <input type="number" id="pCount" value="4" min="2" max="8" class="input-box" style="width: 100px;">
     <button class="btn btn-primary" onclick="bootGame()">啟動牌局</button>
     <button class="btn" onclick="goHome()">返回</button>
 </div>
 
 <div id="announcer">
-    <div id="announce-main" style="font-size: 24px; font-weight: bold; margin-bottom: 10px;"></div>
-    <div id="announce-sub" style="color: #bbb; margin-bottom: 20px; font-size: 14px;"></div>
+    <div id="announce-main" style="font-size: 22px; font-weight: bold; margin-bottom: 12px; color: var(--gold);"></div>
+    <div id="announce-sub" style="color: #eee; margin-bottom: 20px; font-size: 15px; line-height: 1.4;"></div>
     <button class="btn btn-gold" onclick="closeAnnounce()" style="width: 100px;">確認</button>
 </div>
 
 <div id="target-overlay" class="overlay-screen hidden" style="background: rgba(0,0,0,0.9); z-index: 3500;">
-    <h3 id="target-title">請選擇目標</h3>
-    <div id="target-list" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
+    <h3 id="target-title" style="color: var(--gold);">請選擇目標</h3>
+    <div id="target-list" style="display:flex; flex-wrap:wrap; justify-content:center; gap: 10px;"></div>
+    <button class="btn btn-cancel" onclick="cancelAction()">↩ 取消出牌</button>
 </div>
 
 <div class="game-world" id="main" style="display: none;">
@@ -142,12 +148,13 @@
     // --- 遊戲邏輯 ---
     function bootGame() {
         const num = parseInt(document.getElementById('pCount').value);
+        const userName = document.getElementById('pName').value || "玩家";
         deck = [];
         CARD_DATA.forEach(c => { for(let i=0; i<c.count; i++) deck.push({...c}); });
         deck.sort(() => Math.random() - 0.5);
 
         players = Array.from({length: num}, (_, i) => ({
-            id: i, name: i === 0 ? "玩家" : `NPC ${i}`,
+            id: i, name: i === 0 ? userName : `NPC ${i}`,
             hand: [deck.pop()], lastDiscard: null, isOut: false, isProt: false, isNPC: i !== 0
         }));
 
@@ -169,19 +176,18 @@
 
         updateUI();
 
-        // 雙公主機制檢測
+        // 雙公主勝利機制
         if (p.hand.filter(c => c.v === 8).length === 2) {
             isOver = true;
             updateUI();
-            await announce("👑 奇蹟勝利！", `${p.name} 同時持有兩位公主，直接獲勝！`);
+            await announce("👑 奇蹟勝利！", `${p.name} 同時持有兩位公主，直接贏得對局！`);
             return;
         }
 
-        if (p.isNPC) setTimeout(() => npcPlay(p), 1200);
+        if (p.isNPC) setTimeout(() => npcPlay(p), 1000);
     }
 
     function npcPlay(p) {
-        // NPC 簡單決策：強迫伯爵夫人機制或不丟公主
         let idx = 0;
         if (p.hand.some(c => c.v === 7) && p.hand.some(c => c.v === 5 || c.v === 6)) {
             idx = p.hand.findIndex(c => c.v === 7);
@@ -191,14 +197,18 @@
         playCard(p.id, idx);
     }
 
+    // 暫存出牌選擇
+    let pendingCard = null;
+    let pendingCardIdx = -1;
+
     async function playCard(pIdx, cIdx) {
         if (isOver || pIdx !== currentIdx || busy) return;
         busy = true;
         let p = players[pIdx];
-        let card = p.hand.splice(cIdx, 1)[0];
-        p.lastDiscard = card;
-        updateUI();
-        addLog(`${p.name} 打出 [${card.name}]`);
+        let card = p.hand[cIdx];
+        
+        pendingCard = card;
+        pendingCardIdx = cIdx;
 
         // 功能分支
         if ([1,2,3,5,6].includes(card.v)) {
@@ -211,50 +221,79 @@
                     showTargetOverlay(`對誰使用 ${card.name}？`, targets.map(t=>({n:t.name, v:t.id})), (tid) => executeEffect(card.v, tid, pIdx));
                 }
             } else {
-                await announce("功能失效", "場上沒有可選擇的目標");
+                // 強制出牌但無目標
+                p.hand.splice(cIdx, 1);
+                p.lastDiscard = card;
+                updateUI();
+                await announce(`${p.name} 使用 ${card.name}`, "場上沒有可選擇的目標，效果失效。");
                 finishTurn();
             }
-        } else if (card.v === 4) {
-            p.isProt = true;
-            await announce(p.name, "發動侍女保護");
-            finishTurn();
-        } else if (card.v === 7) {
-            await announce(p.name, "打出了伯爵夫人");
-            finishTurn();
-        } else if (card.v === 8) {
-            await announce("😱 喔不！", `${p.name} 棄掉了公主`);
-            eliminate(p);
+        } else {
+            // 不需目標的牌 (4, 7, 8)
+            p.hand.splice(cIdx, 1);
+            p.lastDiscard = card;
+            updateUI();
+            if (card.v === 4) {
+                p.isProt = true;
+                await announce(`${p.name}`, `使用了 [${card.name}]\n進入守護狀態，下一回合前不受效果影響。`);
+            } else if (card.v === 8) {
+                await announce(`${p.name} ➔ 自己`, `使用了 [${card.name}]\n公主被棄置了，${p.name} 遭到淘汰。`);
+                eliminate(p);
+            } else {
+                await announce(`${p.name}`, `使用了 [${card.name}]`);
+            }
             finishTurn();
         }
+    }
+
+    function cancelAction() {
+        document.getElementById('target-overlay').classList.add('hidden');
+        busy = false;
+        pendingCard = null;
+        pendingCardIdx = -1;
     }
 
     async function executeEffect(v, tid, pIdx) {
         let p = players[pIdx];
         let t = players[tid];
+        
+        // 正式從手牌移除
+        p.hand.splice(pendingCardIdx, 1);
+        p.lastDiscard = pendingCard;
+        updateUI();
+
+        const title = `${p.name} ➔ ${t.name}`;
+        let sub = `使用了 [${pendingCard.name}]。`;
 
         if (v === 1) { // 衛兵
             let guess = p.isNPC ? Math.floor(Math.random()*7)+2 : parseInt(prompt(`猜 ${t.name} 的點數 (2-8)`));
             if (t.hand[0].v === guess) {
-                await announce("猜中了！", `${t.name} 被淘汰了 (原手牌: ${t.hand[0].name})`);
+                await announce(title, `${sub}\n猜中了點數 ${guess}！\n${t.name} 被淘汰了。`);
                 eliminate(t);
             } else {
-                await announce("猜錯了", `並不是 ${guess}`);
+                await announce(title, `${sub}\n猜測點數為 ${guess}，可惜猜錯了。`);
             }
         } else if (v === 2) { // 神父
-            if (!p.isNPC) await announce("神父偵查", `${t.name} 的手牌是：${t.hand[0].name}`);
-            else addLog(`NPC 使用神父查看了 ${t.name}`);
+            let resultSub = p.isNPC ? `${sub}\n私下查看了手牌。` : `${sub}\n看到了手牌是：[${t.hand[0].name}]`;
+            await announce(title, resultSub);
         } else if (v === 3) { // 男爵
             let v1 = p.hand[0].v, v2 = t.hand[0].v;
-            await announce("男爵決鬥", `${p.name} 與 ${t.name} 私下比牌`);
-            if (v1 > v2) { await announce("結果", `${t.name} 點數較小淘汰`); eliminate(t); }
-            else if (v2 > v1) { await announce("結果", `${p.name} 點數較小淘汰`); eliminate(p); }
-            else { await announce("結果", "雙方平手"); }
+            let result = "";
+            if (v1 > v2) { result = `${t.name} 點數較小，遭到淘汰！`; eliminate(t); }
+            else if (v2 > v1) { result = `${p.name} 點數較小，遭到淘汰！`; eliminate(p); }
+            else { result = "雙方點數相同，平安無事。"; }
+            await announce(title, `${sub}\n進行了比牌決鬥。\n${result}`);
         } else if (v === 5) { // 王子
-            await announce("王子密令", `${t.name} 棄掉手牌並重抽`);
-            if (t.hand[0].v === 8) { await announce("致命後果", "公主被棄掉，玩家淘汰"); eliminate(t); }
-            else { t.lastDiscard = t.hand[0]; t.hand = [deck.length > 0 ? deck.pop() : {v:0, name:"無"}]; }
+            await announce(title, `${sub}\n強制棄掉手牌並重抽。`);
+            if (t.hand[0].v === 8) {
+                await announce("致命後果", `公主被棄置，${t.name} 遭到淘汰！`);
+                eliminate(t);
+            } else {
+                t.lastDiscard = t.hand[0];
+                t.hand = [deck.length > 0 ? deck.pop() : {v:0, name:"無"}];
+            }
         } else if (v === 6) { // 國王
-            await announce("國王交換", "雙方互換手牌");
+            await announce(title, `${sub}\n雙方互換了手牌。`);
             let tmp = p.hand[0]; p.hand[0] = t.hand[0]; t.hand[0] = tmp;
         }
         finishTurn();
@@ -271,7 +310,7 @@
         let alives = players.filter(pl => !pl.isOut);
         if (alives.length <= 1) {
             isOver = true; updateUI();
-            announce("遊戲結束", `贏家是：${alives[0]?.name}`);
+            announce("對局結束", `最終贏家是：${alives[0]?.name || "無人"}`);
             return;
         }
         do { currentIdx = (currentIdx + 1) % players.length; } while (players[currentIdx].isOut);
@@ -297,7 +336,7 @@
         container.innerHTML = "";
         const total = players.length;
         const isMobile = window.innerWidth < 768;
-        const rx = isMobile ? 38 : 30;
+        const rx = isMobile ? 38 : 32;
         const ry = isMobile ? 30 : 35;
 
         players.forEach((p, i) => {
@@ -318,7 +357,7 @@
                                  onclick="playCard(${i},${ci})">
                                 ${i===0||isOver?`<div class="card-val">${c.v}</div>`:''}
                             </div>
-                        `).join('') : '<b style="color:var(--red)">OUT</b>'}
+                        `).join('') : '<b style="color:var(--red); font-size:1.5rem;">OUT</b>'}
                     </div>
                     <div class="last-discard-box">
                         ${p.lastDiscard ? `<div class="card" style="width:100%;height:100%;background-image:url(${getCardImg(p.lastDiscard.v)})"></div>` : ''}
