@@ -3,146 +3,96 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>情書：響應式功能增強版</title>
+    <title>情書：完全體響應式版</title>
     <style>
         :root { 
             --red: #e74c3c; --dark: #0a0a0a; --gold: #f1c40f;
             --card-w: clamp(55px, 12vw, 75px); 
             --card-h: clamp(80px, 18vw, 105px); 
         }
-        
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
         body { font-family: sans-serif; background: #000; color: white; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
 
-        /* --- 導覽介面 --- */
-        .overlay-screen { 
-            position: fixed; inset: 0; background: rgba(0,0,0,0.95); 
-            z-index: 3000; display: flex; flex-direction: column; 
-            justify-content: center; align-items: center; padding: 20px;
-        }
+        /* --- UI 遮罩層 --- */
+        .overlay-screen { position: fixed; inset: 0; background: rgba(0,0,0,0.95); z-index: 3000; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 20px; text-align: center; }
         .hidden { display: none !important; }
-        .btn { 
-            padding: 12px 30px; margin: 10px; font-size: 1.1rem; cursor: pointer; 
-            border: 1px solid white; background: none; color: white; border-radius: 5px; 
-            width: 100%; max-width: 250px; font-weight: bold;
-        }
+        .btn { padding: 12px 25px; margin: 8px; font-size: 1rem; cursor: pointer; border: 1px solid white; background: none; color: white; border-radius: 5px; width: 100%; max-width: 220px; font-weight: bold; }
         .btn-primary { border-color: var(--red); color: var(--red); }
+        .btn-gold { border-color: var(--gold); color: var(--gold); }
 
-        /* 規則清單 */
-        .rule-content { 
-            text-align: left; max-width: 400px; background: #111; padding: 20px; 
-            border-radius: 10px; font-size: 0.9rem; overflow-y: auto; margin-bottom: 20px;
-            border: 1px solid #444;
-        }
-        .rule-item { margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 4px; }
+        .rule-content { text-align: left; max-width: 450px; background: #111; padding: 15px; border-radius: 10px; font-size: 0.85rem; overflow-y: auto; margin-bottom: 15px; border: 1px solid #333; }
+        .rule-item { margin-bottom: 6px; border-bottom: 1px solid #222; padding-bottom: 4px; }
 
         /* --- 遊戲主區域 --- */
-        .game-world { 
-            flex: 1; position: relative; 
-            background: radial-gradient(circle, #1a4a3e 0%, #0a0a12 100%);
-            overflow: hidden; touch-action: none;
-        }
-        
-        .side-log { 
-            width: 200px; background: #050505; border-left: 1px solid #333; 
-            display: flex; flex-direction: column; padding: 10px; z-index: 10;
-        }
+        .game-world { flex: 1; position: relative; background: radial-gradient(circle, #1a4a3e 0%, #0a0a12 100%); overflow: hidden; }
+        .side-log { width: 180px; background: #050505; border-left: 1px solid #333; display: flex; flex-direction: column; padding: 10px; z-index: 10; }
         @media (max-width: 768px) { .side-log { display: none; } }
+        #log { flex: 1; overflow-y: auto; font-size: 11px; display: flex; flex-direction: column-reverse; }
 
-        #log { flex: 1; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column-reverse; }
+        #help-btn { position: absolute; bottom: 15px; left: 15px; z-index: 100; background: rgba(0,0,0,0.7); border: 1px solid var(--gold); color: var(--gold); padding: 8px 15px; border-radius: 20px; font-size: 12px; cursor: pointer; }
 
-        /* 角色功能總覽按鈕 (常駐) */
-        #help-btn {
-            position: absolute; bottom: 20px; left: 20px; z-index: 100;
-            background: rgba(0,0,0,0.6); border: 1px solid var(--gold);
-            color: var(--gold); padding: 8px 15px; border-radius: 20px;
-            font-size: 14px; cursor: pointer;
-        }
-
-        /* 玩家排版 */
-        .player-seat { 
-            position: absolute; transform: translate(-50%, -50%); 
-            display: flex; align-items: center; justify-content: center; 
-            width: fit-content; transition: all 0.5s ease;
-        }
-        .p-info { 
-            order: 2; margin-left: 8px; background: rgba(20, 20, 40, 0.9); 
-            padding: 4px 10px; border-radius: 12px; border: 1.5px solid #444; 
-            font-size: 11px; white-space: nowrap; 
-        }
-        .active .p-info { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
+        /* 玩家位置 */
+        .player-seat { position: absolute; transform: translate(-50%, -50%); display: flex; align-items: center; justify-content: center; width: fit-content; transition: 0.5s; }
+        .p-info { order: 2; margin-left: 8px; background: rgba(20, 20, 40, 0.9); padding: 4px 10px; border-radius: 10px; border: 1px solid #444; font-size: 11px; white-space: nowrap; }
+        .active .p-info { border-color: var(--gold); box-shadow: 0 0 8px var(--gold); color: var(--gold); }
         .out { opacity: 0.4; filter: grayscale(1); }
 
         .card-zone { order: 1; display: flex; flex-direction: column; align-items: center; }
         .hand { display: flex; justify-content: center; min-height: var(--card-h); align-items: flex-end; }
+        .last-discard-box { height: calc(var(--card-h) * 0.75); width: calc(var(--card-w) * 0.75); border: 1px dashed #555; border-radius: 4px; background: rgba(255,255,255,0.05); margin-top: 5px; order: 2; overflow: hidden; }
         
-        .last-discard-box { 
-            height: calc(var(--card-h) * 0.7); width: calc(var(--card-w) * 0.7); 
-            border: 1px dashed #666; border-radius: 4px; background: rgba(255,255,255,0.05); 
-            margin-top: 5px; order: 2; overflow: hidden;
-        }
-        
-        .card { 
-            width: var(--card-w); height: var(--card-h); background-size: cover; 
-            border-radius: 5px; border: 1px solid #222; position: relative; 
-            cursor: pointer; margin: 0 1px; transition: 0.2s;
-        }
-        .card-val { 
-            position: absolute; top: 2px; left: 2px; background: var(--gold); 
-            color: black; width: 16px; height: 16px; border-radius: 50%; 
-            font-size: 10px; line-height: 16px; text-align: center; font-weight: bold; 
-        }
+        .card { width: var(--card-w); height: var(--card-h); background-size: cover; border-radius: 5px; border: 1px solid #222; position: relative; cursor: pointer; margin: 0 1px; transition: 0.2s; background-color: #222; }
+        .card-val { position: absolute; top: 2px; left: 2px; background: var(--gold); color: black; width: 16px; height: 16px; border-radius: 50%; font-size: 10px; line-height: 16px; text-align: center; font-weight: bold; }
 
-        /* 公告與彈窗 */
-        #announcer { 
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-            width: 85%; max-width: 320px; background: rgba(0,0,0,0.95); 
-            border: 1px solid #fff; z-index: 2000; display: none; 
-            flex-direction: column; align-items: center; padding: 20px; border-radius: 10px;
-        }
-        .announce-text { font-size: 24px; color: #fff; margin-bottom: 8px; font-weight: bold;}
+        /* 大字報 */
+        #announcer { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 85%; max-width: 320px; background: rgba(0,0,0,0.95); border: 1px solid #fff; z-index: 4000; display: none; flex-direction: column; align-items: center; padding: 20px; border-radius: 10px; }
     </style>
 </head>
 <body>
 
 <div id="screen-home" class="overlay-screen">
-    <h1 style="color: var(--gold); margin-bottom: 40px; letter-spacing: 5px;">💌 情書</h1>
-    <button class="btn" onclick="switchScreen('screen-rules')">察看規則</button>
-    <button class="btn btn-primary" onclick="switchScreen('screen-setup')">開始遊戲</button>
+    <h1 style="color: var(--gold); font-size: 3rem; margin-bottom: 30px;">💌 情書</h1>
+    <button class="btn" onclick="openRules()">察看規則</button>
+    <button class="btn btn-primary" onclick="switchSetup()">開始遊戲</button>
 </div>
 
 <div id="screen-rules" class="overlay-screen hidden">
-    <h2 style="color: var(--gold);">角色功能總覽</h2>
+    <h2 style="color: var(--gold);">角色能力總覽</h2>
     <div class="rule-content">
-        <div class="rule-item"><b>(8) 公主:</b> 棄掉此牌即淘汰。</div>
-        <div class="rule-item"><b>(7) 伯爵夫人:</b> 若手上有王子或國王必打出。</div>
+        <div class="rule-item"><b>👑 雙公主勝利:</b> 手中同時持有兩張公主時，立即獲勝。</div>
+        <div class="rule-item"><b>(8) 公主:</b> 打出或棄掉即淘汰。</div>
+        <div class="rule-item"><b>(7) 伯爵夫人:</b> 若手上有王子或國王必須打出。</div>
         <div class="rule-item"><b>(6) 國王:</b> 與一名玩家交換手牌。</div>
-        <div class="rule-item"><b>(5) 王子:</b> 指定一名玩家棄牌並重抽。</div>
-        <div class="rule-item"><b>(4) 侍女:</b> 保護自己一輪，不受效果影響。</div>
-        <div class="rule-item"><b>(3) 男爵:</b> 與玩家私下比牌，小者淘汰。</div>
-        <div class="rule-item"><b>(2) 神父:</b> 私下查看一名玩家的手牌。</div>
-        <div class="rule-item"><b>(1) 衛兵:</b> 猜一名玩家的牌（不可猜1），對則淘汰。</div>
+        <div class="rule-item"><b>(5) 王子:</b> 指定玩家棄掉手牌並重抽。</div>
+        <div class="rule-item"><b>(4) 侍女:</b> 保護自己一輪。</div>
+        <div class="rule-item"><b>(3) 男爵:</b> 與玩家比點數，小者淘汰。</div>
+        <div class="rule-item"><b>(2) 神父:</b> 查看一名玩家手牌。</div>
+        <div class="rule-item"><b>(1) 衛兵:</b> 猜玩家手牌點數（不能猜1）。</div>
     </div>
-    <button class="btn" onclick="closeRules()">關閉</button>
+    <button class="btn" onclick="closeRules()">返回</button>
 </div>
 
 <div id="screen-setup" class="overlay-screen hidden">
     <h2>遊戲設定</h2>
-    <p>設定人數 (2-8人)</p>
-    <input type="number" id="pCount" value="4" min="2" max="8" style="padding:10px; width:80px; text-align:center; font-size:20px;">
-    <br>
-    <button class="btn btn-primary" onclick="bootGame()">進入牌局</button>
-    <button class="btn" onclick="switchScreen('screen-home')">返回</button>
+    <p>參與人數 (2-8人)</p>
+    <input type="number" id="pCount" value="4" min="2" max="8" style="padding:10px; width:100px; text-align:center; font-size:20px; margin: 15px;">
+    <button class="btn btn-primary" onclick="bootGame()">啟動牌局</button>
+    <button class="btn" onclick="goHome()">返回</button>
 </div>
 
 <div id="announcer">
-    <div class="announce-text" id="announce-main"></div>
-    <div id="announce-sub" style="margin-bottom:20px; color:#aaa; font-size: 14px;"></div>
-    <button class="btn" onclick="closeAnnounce()" style="width:120px; padding:8px; font-size:16px;">確認</button>
+    <div id="announce-main" style="font-size: 24px; font-weight: bold; margin-bottom: 10px;"></div>
+    <div id="announce-sub" style="color: #bbb; margin-bottom: 20px; font-size: 14px;"></div>
+    <button class="btn btn-gold" onclick="closeAnnounce()" style="width: 100px;">確認</button>
+</div>
+
+<div id="target-overlay" class="overlay-screen hidden" style="background: rgba(0,0,0,0.9); z-index: 3500;">
+    <h3 id="target-title">請選擇目標</h3>
+    <div id="target-list" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
 </div>
 
 <div class="game-world" id="main" style="display: none;">
-    <button id="help-btn" onclick="switchScreen('screen-rules')">📜 角色功能</button>
+    <button id="help-btn" onclick="openRules()">📜 角色功能</button>
     <div id="seats-container"></div>
 </div>
 
@@ -151,29 +101,33 @@
     <div id="log"></div>
 </div>
 
-<div id="target-overlay" class="overlay-screen hidden" style="background: rgba(0,0,0,0.85);">
-    <h3 style="color:var(--gold)">請選擇目標</h3>
-    <div id="target-list" style="display:flex; flex-wrap:wrap; justify-content:center;"></div>
-</div>
-
 <script>
     const ts = new Date().getTime();
     const getCardImg = (v) => v ? `card${v}.png?v=${ts}` : `card_back.png?v=${ts}`; 
     const CARD_BACK = `card_back.png?v=${ts}`;
 
-    const CARD_POOL = [1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8];
-    const CARD_NAMES = ["","衛兵","神父","男爵","侍女","王子","國王","伯爵夫人","公主"];
+    const CARD_DATA = [
+        { v: 1, name: "衛兵", count: 10 }, { v: 2, name: "神父", count: 4 },
+        { v: 3, name: "男爵", count: 4 }, { v: 4, name: "侍女", count: 4 },
+        { v: 5, name: "王子", count: 4 }, { v: 6, name: "國王", count: 2 },
+        { v: 7, name: "伯爵夫人", count: 2 }, { v: 8, name: "公主", count: 2 }
+    ];
 
     let deck = [], players = [], currentIdx = 0, isOver = false, busy = false, resolveAction = null;
 
-    function switchScreen(id) {
-        document.getElementById(id).classList.remove('hidden');
+    // --- 選單控制 ---
+    function openRules() { document.getElementById('screen-rules').classList.remove('hidden'); }
+    function closeRules() { document.getElementById('screen-rules').classList.add('hidden'); }
+    function switchSetup() { 
+        document.getElementById('screen-home').classList.add('hidden');
+        document.getElementById('screen-setup').classList.remove('hidden');
     }
-    function closeRules() {
-        document.getElementById('screen-rules').classList.add('hidden');
+    function goHome() {
+        document.getElementById('screen-setup').classList.add('hidden');
+        document.getElementById('screen-home').classList.remove('hidden');
     }
 
-    function announce(main, sub) {
+    async function announce(main, sub) {
         document.getElementById('announce-main').innerText = main;
         document.getElementById('announce-sub').innerText = sub;
         document.getElementById('announcer').style.display = 'flex';
@@ -185,15 +139,19 @@
         if(resolveAction) { let r = resolveAction; resolveAction = null; r(); }
     }
 
+    // --- 遊戲邏輯 ---
     function bootGame() {
         const num = parseInt(document.getElementById('pCount').value);
-        deck = CARD_POOL.map(v => ({v, name: CARD_NAMES[v]})).sort(() => Math.random() - 0.5);
+        deck = [];
+        CARD_DATA.forEach(c => { for(let i=0; i<c.count; i++) deck.push({...c}); });
+        deck.sort(() => Math.random() - 0.5);
+
         players = Array.from({length: num}, (_, i) => ({
-            id: i, name: i === 0 ? "你" : `NPC ${i}`,
+            id: i, name: i === 0 ? "玩家" : `NPC ${i}`,
             hand: [deck.pop()], lastDiscard: null, isOut: false, isProt: false, isNPC: i !== 0
         }));
-        
-        document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
+
+        document.getElementById('screen-setup').classList.add('hidden');
         document.getElementById('main').style.display = 'block';
         document.getElementById('side-log').style.display = 'flex';
         updateUI();
@@ -206,19 +164,30 @@
         let p = players[currentIdx];
         p.isProt = false;
         
-        if (deck.length > 0) {
-            p.hand.push(deck.pop());
-        } else {
-            concludeGame(); return;
-        }
-        
+        if (deck.length > 0) p.hand.push(deck.pop());
+        else { concludeGame(); return; }
+
         updateUI();
-        if (p.isNPC) setTimeout(() => npcPlay(p), 1000);
+
+        // 雙公主機制檢測
+        if (p.hand.filter(c => c.v === 8).length === 2) {
+            isOver = true;
+            updateUI();
+            await announce("👑 奇蹟勝利！", `${p.name} 同時持有兩位公主，直接獲勝！`);
+            return;
+        }
+
+        if (p.isNPC) setTimeout(() => npcPlay(p), 1200);
     }
 
     function npcPlay(p) {
-        // NPC 簡單邏輯：不丟公主即可
-        let idx = p.hand[0].v === 8 ? 1 : 0;
+        // NPC 簡單決策：強迫伯爵夫人機制或不丟公主
+        let idx = 0;
+        if (p.hand.some(c => c.v === 7) && p.hand.some(c => c.v === 5 || c.v === 6)) {
+            idx = p.hand.findIndex(c => c.v === 7);
+        } else if (p.hand[0].v === 8) {
+            idx = 1;
+        }
         playCard(p.id, idx);
     }
 
@@ -229,36 +198,98 @@
         let card = p.hand.splice(cIdx, 1)[0];
         p.lastDiscard = card;
         updateUI();
-        addLog(`${p.name} 打出 ${card.name}`);
-        await announce(p.name, `打出了 [${card.name}]`);
+        addLog(`${p.name} 打出 [${card.name}]`);
 
-        // 簡易功能執行
-        if (card.v === 8) {
-            await announce("淘汰", `${p.name} 棄掉公主！`);
-            p.isOut = true;
+        // 功能分支
+        if ([1,2,3,5,6].includes(card.v)) {
+            let targets = players.filter(pl => !pl.isOut && !pl.isProt && (card.v === 5 ? true : pl.id !== pIdx));
+            if (targets.length > 0) {
+                if (p.isNPC) {
+                    let t = targets[Math.floor(Math.random()*targets.length)];
+                    executeEffect(card.v, t.id, pIdx);
+                } else {
+                    showTargetOverlay(`對誰使用 ${card.name}？`, targets.map(t=>({n:t.name, v:t.id})), (tid) => executeEffect(card.v, tid, pIdx));
+                }
+            } else {
+                await announce("功能失效", "場上沒有可選擇的目標");
+                finishTurn();
+            }
         } else if (card.v === 4) {
-            await announce("侍女", `${p.name} 進入保護狀態`);
             p.isProt = true;
-        } else if (card.v === 2 && !p.isNPC) {
-            // 示範神父在新手模式下的提示
-            let target = players.find(pl => !pl.isOut && pl.id !== p.id);
-            if(target) await announce("神父偵查", `${target.name} 的牌是 [${target.hand[0].name}]`);
+            await announce(p.name, "發動侍女保護");
+            finishTurn();
+        } else if (card.v === 7) {
+            await announce(p.name, "打出了伯爵夫人");
+            finishTurn();
+        } else if (card.v === 8) {
+            await announce("😱 喔不！", `${p.name} 棄掉了公主`);
+            eliminate(p);
+            finishTurn();
         }
-        
+    }
+
+    async function executeEffect(v, tid, pIdx) {
+        let p = players[pIdx];
+        let t = players[tid];
+
+        if (v === 1) { // 衛兵
+            let guess = p.isNPC ? Math.floor(Math.random()*7)+2 : parseInt(prompt(`猜 ${t.name} 的點數 (2-8)`));
+            if (t.hand[0].v === guess) {
+                await announce("猜中了！", `${t.name} 被淘汰了 (原手牌: ${t.hand[0].name})`);
+                eliminate(t);
+            } else {
+                await announce("猜錯了", `並不是 ${guess}`);
+            }
+        } else if (v === 2) { // 神父
+            if (!p.isNPC) await announce("神父偵查", `${t.name} 的手牌是：${t.hand[0].name}`);
+            else addLog(`NPC 使用神父查看了 ${t.name}`);
+        } else if (v === 3) { // 男爵
+            let v1 = p.hand[0].v, v2 = t.hand[0].v;
+            await announce("男爵決鬥", `${p.name} 與 ${t.name} 私下比牌`);
+            if (v1 > v2) { await announce("結果", `${t.name} 點數較小淘汰`); eliminate(t); }
+            else if (v2 > v1) { await announce("結果", `${p.name} 點數較小淘汰`); eliminate(p); }
+            else { await announce("結果", "雙方平手"); }
+        } else if (v === 5) { // 王子
+            await announce("王子密令", `${t.name} 棄掉手牌並重抽`);
+            if (t.hand[0].v === 8) { await announce("致命後果", "公主被棄掉，玩家淘汰"); eliminate(t); }
+            else { t.lastDiscard = t.hand[0]; t.hand = [deck.length > 0 ? deck.pop() : {v:0, name:"無"}]; }
+        } else if (v === 6) { // 國王
+            await announce("國王交換", "雙方互換手牌");
+            let tmp = p.hand[0]; p.hand[0] = t.hand[0]; t.hand[0] = tmp;
+        }
         finishTurn();
+    }
+
+    function eliminate(pl) { 
+        pl.isOut = true; 
+        pl.lastDiscard = pl.hand[0]; 
+        pl.hand = []; 
+        addLog(`${pl.name} 淘汰`);
     }
 
     function finishTurn() {
         let alives = players.filter(pl => !pl.isOut);
         if (alives.length <= 1) {
+            isOver = true; updateUI();
             announce("遊戲結束", `贏家是：${alives[0]?.name}`);
-            isOver = true; return;
+            return;
         }
-        do {
-            currentIdx = (currentIdx + 1) % players.length;
-        } while (players[currentIdx].isOut);
+        do { currentIdx = (currentIdx + 1) % players.length; } while (players[currentIdx].isOut);
         updateUI();
         startTurn();
+    }
+
+    function showTargetOverlay(title, list, cb) {
+        const ov = document.getElementById('target-overlay');
+        const box = document.getElementById('target-list');
+        document.getElementById('target-title').innerText = title;
+        ov.classList.remove('hidden'); box.innerHTML = "";
+        list.forEach(item => {
+            let btn = document.createElement('button');
+            btn.className = "btn btn-primary"; btn.innerText = item.n;
+            btn.onclick = () => { ov.classList.add('hidden'); cb(item.v); };
+            box.appendChild(btn);
+        });
     }
 
     function updateUI() {
@@ -283,9 +314,9 @@
                 <div class="card-zone">
                     <div class="hand">
                         ${!p.isOut ? p.hand.map((c, ci) => `
-                            <div class="card" style="background-image:url(${i===0?getCardImg(c.v):CARD_BACK})" 
+                            <div class="card" style="background-image:url(${i===0||isOver?getCardImg(c.v):CARD_BACK})" 
                                  onclick="playCard(${i},${ci})">
-                                ${i===0?`<div class="card-val">${c.v}</div>`:''}
+                                ${i===0||isOver?`<div class="card-val">${c.v}</div>`:''}
                             </div>
                         `).join('') : '<b style="color:var(--red)">OUT</b>'}
                     </div>
@@ -304,7 +335,7 @@
         d.className = "log-msg"; d.innerText = `> ${m}`;
         l.prepend(d);
     }
-
     window.onresize = updateUI;
 </script>
 </body>
+</html>
