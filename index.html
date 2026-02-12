@@ -59,8 +59,8 @@
 
 <script>
     // 圖片設定：如果沒上傳圖片，背景會是深藍色，不會壞掉
-    const getCardImg = (v) => `card${v}.png`;
-    const CARD_BACK = `card_back.png`;
+    // 在檔名後面加一個隨機數字，防止瀏覽器記住舊圖
+const CARD_BACK = `card_back.png?t=${new Date().getTime()}`;
 
     const CARD_DATA = [
         { v: 1, name: "衛兵", count: 10 }, { v: 2, name: "神父", count: 4 },
@@ -222,3 +222,4 @@
 
 </body>
 </html>
+
