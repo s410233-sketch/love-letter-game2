@@ -3,69 +3,91 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>情書豪華版 - 視覺棄牌版</title>
+    <title>情書豪華版 - 圓桌競技場</title>
     <style>
-        :root { --gold: #f1c40f; --red: #e74c3c; --dark: #0c0c16; --card-w: 90px; --card-h: 130px; }
+        :root { --gold: #f1c40f; --red: #e74c3c; --dark: #0a0a12; --card-w: 85px; --card-h: 120px; }
         body { font-family: sans-serif; background: var(--dark); color: white; margin: 0; padding: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* 畫面左側：主要遊戲區 */
-        .game-area { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; }
-        
-        /* 畫面右側：縮小的日誌框 */
-        .side-log { width: 250px; background: #16213e; border-left: 2px solid var(--gold); display: flex; flex-direction: column; padding: 10px; }
+        /* 右側日誌 */
+        .side-log { width: 220px; background: #16213e; border-left: 2px solid var(--gold); display: flex; flex-direction: column; padding: 10px; z-index: 10; }
         #log { flex: 1; overflow-y: auto; font-size: 13px; display: flex; flex-direction: column-reverse; }
-        .log-msg { border-bottom: 1px solid #1a3a5f; padding: 5px 0; line-height: 1.4; }
+        .log-msg { border-bottom: 1px solid #1a3a5f; padding: 5px 0; }
 
-        /* 玩家網格 */
-        .player-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 15px; }
-        .p-box { background: #1a1a2e; padding: 15px; border-radius: 12px; border: 2px solid #333; position: relative; }
-        .p-box.active { border-color: var(--gold); box-shadow: 0 0 15px rgba(241, 196, 15, 0.3); }
-        .p-box.out { opacity: 0.6; filter: grayscale(0.5); border-color: #e74c3c; }
+        /* 左側遊戲桌 */
+        .game-world { flex: 1; position: relative; background: radial-gradient(circle, #1a4a3e 0%, #0a0a12 80%); overflow: hidden; }
+        
+        /* 圓桌中心點 */
+        .table-center {
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 150px; height: 150px; border-radius: 50%; background: rgba(0,0,0,0.3);
+            border: 2px dashed var(--gold); display: flex; flex-direction: column;
+            justify-content: center; align-items: center; text-align: center; font-weight: bold;
+        }
+
+        /* 玩家座位容器 */
+        .player-seat {
+            position: absolute; width: 220px; transition: all 0.5s ease;
+            transform: translate(-50%, -50%); text-align: center;
+        }
+
+        /* 角色資訊框 */
+        .p-info { 
+            background: #1a1a2e; padding: 10px; border-radius: 10px; border: 2px solid #444;
+            margin-bottom: 10px; position: relative;
+        }
+        .active .p-info { border-color: var(--gold); box-shadow: 0 0 20px var(--gold); }
+        .out .p-info { opacity: 0.5; filter: grayscale(1); border-color: var(--red); }
 
         /* 卡牌樣式 */
         .card {
             width: var(--card-w); height: var(--card-h);
             background-color: #2c3e50; background-size: cover; background-position: center;
-            border-radius: 6px; border: 1px solid #555; display: inline-block;
-            margin: 2px; position: relative; cursor: pointer; transition: transform 0.2s;
+            border-radius: 8px; border: 1px solid #555; display: inline-block;
+            margin: 2px; position: relative; cursor: pointer; transition: 0.2s;
         }
-        .card:hover { transform: translateY(-5px); border-color: var(--gold); }
-        .card-val { position: absolute; top: 2px; left: 2px; background: var(--gold); color: black; width: 18px; height: 18px; border-radius: 50%; font-weight: bold; line-height: 18px; font-size: 12px; text-align: center; }
+        .card:hover { transform: scale(1.1); z-index: 5; }
+        .card-val { position: absolute; top: 2px; left: 2px; background: var(--gold); color: black; width: 20px; height: 20px; border-radius: 50%; font-size: 12px; line-height: 20px; text-align: center; font-weight: bold; }
 
-        /* 棄牌區樣式 (已出的牌) */
-        .discard-pile { margin-top: 10px; padding-top: 10px; border-top: 1px dashed #444; display: flex; flex-wrap: wrap; gap: 4px; }
-        .small-card { width: 45px; height: 65px; background-size: cover; border-radius: 4px; border: 1px solid #222; opacity: 0.9; }
+        /* 棄牌區 (變大) */
+        .discard-pile { 
+            display: flex; justify-content: center; flex-wrap: wrap; gap: 5px; 
+            max-width: 200px; margin: 0 auto;
+        }
+        .discard-card { 
+            width: 55px; height: 75px; background-size: cover; border-radius: 4px; 
+            border: 1px solid #333; box-shadow: 2px 2px 5px rgba(0,0,0,0.5);
+        }
 
-        .setup-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 100; background: #16213e; padding: 40px; border-radius: 20px; border: 2px solid var(--gold); }
+        /* 設定介面 */
+        .setup-ui { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 100; background: #16213e; padding: 30px; border-radius: 20px; border: 2px solid var(--gold); text-align: center; }
         button { background: var(--red); color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        input { padding: 10px; width: 50px; text-align: center; font-size: 18px; }
+        input { padding: 10px; width: 60px; text-align: center; font-size: 18px; }
     </style>
 </head>
 <body>
 
 <div id="setup" class="setup-ui">
-    <h1>💌 情書：視覺強化版</h1>
+    <h1>💌 情書：圓桌競技版</h1>
     <p>設定人數 (2-8人)</p>
     <input type="number" id="pCount" value="4" min="2" max="8">
     <br><br>
     <button onclick="bootGame()">開始遊戲</button>
 </div>
 
-<div class="game-area" id="main" style="display: none;">
-    <div style="display: flex; justify-content: space-between; color: var(--gold); font-weight: bold; margin-bottom: 15px;">
-        <span id="deck-info">🎴 剩餘牌數: 0</span>
-        <span id="dir-info">🔄 方向: 等待中</span>
+<div class="game-world" id="main" style="display: none;">
+    <div class="table-center">
+        <div id="deck-count">🎴 剩餘: 0</div>
+        <div id="dir-text" style="color: var(--gold); font-size: 14px; margin-top:5px;">🔄</div>
     </div>
-    <div id="players" class="player-grid"></div>
+    <div id="seats-container"></div>
 </div>
 
 <div class="side-log" id="side-log" style="display: none;">
-    <h3 style="color: var(--gold); margin-top: 0;">遊戲日誌</h3>
+    <h3 style="color: var(--gold); margin: 0 0 10px 0;">遊戲日誌</h3>
     <div id="log"></div>
 </div>
 
 <script>
-    // 加入時間標籤破解快取
     const ts = new Date().getTime();
     const getCardImg = (v) => v ? `card${v}.png?v=${ts}` : `card_back.png?v=${ts}`;
     const CARD_BACK = `card_back.png?v=${ts}`;
@@ -88,54 +110,36 @@
         
         players = Array.from({length: num}, (_, i) => ({
             id: i, name: i === 0 ? "你" : `NPC ${i}`,
-            hand: [deck.pop()], 
-            discards: [], // 紀錄出過的牌
-            isOut: false, lastHand: null, isProt: false, isNPC: i !== 0
+            hand: [deck.pop()], discards: [], isOut: false, isProt: false, isNPC: i !== 0
         }));
 
         document.getElementById('setup').style.display = 'none';
-        document.getElementById('main').style.display = 'flex';
+        document.getElementById('main').style.display = 'block';
         document.getElementById('side-log').style.display = 'flex';
         
-        addLog("🎲 正在決定先攻...");
-        setTimeout(resolveRPS, 800);
+        addLog("🎲 開局...");
+        setTimeout(resolveRPS, 500);
     }
 
     function resolveRPS() {
         currentIdx = Math.floor(Math.random() * players.length);
-        addLog(`🏆 贏家：<span style="color:var(--gold)">${players[currentIdx].name}</span>`);
+        addLog(`🏆 贏家：${players[currentIdx].name}`);
         if (players[currentIdx].isNPC) {
             dir = Math.random() > 0.5 ? 1 : -1;
-            addLog(`方向：${dir === 1 ? '順時針' : '逆時針'}`);
             startTurn();
         } else {
-            addLog("你是贏家，請點擊方向：");
-            const btnBox = document.createElement('div');
-            btnBox.innerHTML = `<button onclick="chooseDir(1)">順時針</button> <button onclick="chooseDir(-1)" style="margin-left:5px">逆時針</button>`;
-            document.getElementById('log').prepend(btnBox);
+            addLog("請選方向：<button onclick='chooseDir(1)'>順時針</button> <button onclick='chooseDir(-1)'>逆時針</button>");
         }
     }
 
-    function chooseDir(d) {
-        dir = d;
-        addLog(`方向設定為：${dir === 1 ? '順時針' : '逆時針'}`);
-        startTurn();
-    }
+    function chooseDir(d) { dir = d; startTurn(); }
 
     async function startTurn() {
         if (isOver) return;
         updateUI();
         let p = players[currentIdx];
         p.isProt = false;
-
-        if (deck.length > 0) {
-            p.hand.push(deck.pop());
-            if (p.hand.filter(c => c.v === 8).length === 2) {
-                addLog(`🎉 ${p.name} 雙公主勝利！`, true);
-                isOver = true; updateUI(); return;
-            }
-        } else { concludeGame(); return; }
-
+        if (deck.length > 0) p.hand.push(deck.pop()); else { concludeGame(); return; }
         updateUI();
         if (p.isNPC) {
             await new Promise(r => setTimeout(r, 1500));
@@ -145,118 +149,100 @@
 
     function npcPlay(p) {
         let idx = (p.hand[0].v === 8) ? 1 : 0;
-        if (p.hand.some(c => c.v === 7) && p.hand.some(c => c.v === 5 || c.v === 6)) {
-            idx = p.hand.findIndex(c => c.v === 7);
-        }
+        if (p.hand.some(c => c.v === 7) && p.hand.some(c => c.v === 5 || c.v === 6)) idx = p.hand.findIndex(c => c.v === 7);
         playCard(p.id, idx);
     }
 
     async function playCard(pIdx, cIdx) {
         if (isOver || pIdx !== currentIdx) return;
         let p = players[pIdx];
-        let card = p.hand[cIdx];
-
-        // 伯爵夫人強制檢查
-        if (card.v !== 7 && p.hand.some(c => c.v === 7) && p.hand.some(c => c.v === 5 || c.v === 6)) {
-            if (!p.isNPC) alert("必須打出伯爵夫人！");
-            return;
-        }
-
-        card = p.hand.splice(cIdx, 1)[0];
-        p.discards.push(card); // 丟進棄牌區
-        addLog(`${p.name} 出牌：[${card.name}]`);
-        updateUI();
-
-        // 功能邏輯
+        let card = p.hand.splice(cIdx, 1)[0];
+        p.discards.push(card);
+        addLog(`${p.name} 打出 [${card.name}]`);
+        
+        // 角色功能核心
         switch(card.v) {
             case 1: 
-                let t1 = getT(pIdx);
+                let t1 = getTarget(pIdx);
                 if (t1 !== null) {
-                    let g = p.isNPC ? Math.floor(Math.random()*7)+2 : prompt(`猜 ${players[t1].name} 的身分 (2-8)`);
-                    if (players[t1].hand[0].v == g) { 
-                        addLog(`🎯 猜中！${players[t1].name} 淘汰`); 
-                        eliminate(players[t1]);
-                    } else addLog("💨 沒猜中");
+                    let g = p.isNPC ? Math.floor(Math.random()*7)+2 : prompt(`猜 ${players[t1].name} 的點數 (2-8)`);
+                    if (players[t1].hand[0].v == g) { addLog(`🎯 猜中！${players[t1].name} 淘汰`); eliminate(players[t1]); }
                 } break;
             case 3:
-                let t3 = getT(pIdx);
+                let t3 = getTarget(pIdx);
                 if (t3 !== null) {
                     let v1 = p.hand[0].v, v2 = players[t3].hand[0].v;
-                    if (v1 > v2) { addLog(`💀 ${players[t3].name} 較小，淘汰`); eliminate(players[t3]); }
-                    else if (v1 < v2) { addLog(`💀 ${p.name} 較小，淘汰`); eliminate(p); }
+                    if (v1 > v2) { addLog(`💀 ${players[t3].name} 點數小淘汰`); eliminate(players[t3]); }
+                    else if (v1 < v2) { addLog(`💀 ${p.name} 點數小淘汰`); eliminate(p); }
                 } break;
-            case 4: p.isProt = true; addLog(`${p.name} 獲得保護`); break;
-            case 8: eliminate(p); addLog(`😱 ${p.name} 丟棄公主淘汰！`); break;
+            case 4: p.isProt = true; break;
+            case 8: eliminate(p); break;
         }
 
-        if (checkGameOver()) return;
-        
+        if (players.filter(pl => !pl.isOut).length <= 1) {
+            addLog(`🏁 勝利者：${players.find(pl => !pl.isOut).name}`, true);
+            isOver = true; updateUI(); return;
+        }
+
         currentIdx = (currentIdx + dir + players.length) % players.length;
         while(players[currentIdx].isOut) currentIdx = (currentIdx + dir + players.length) % players.length;
         setTimeout(startTurn, 1000);
     }
 
-    function eliminate(player) {
-        player.isOut = true;
-        player.lastHand = player.hand[0];
-        player.discards.push(player.hand[0]); // 淘汰也要翻牌
-    }
-
-    function getT(me) {
+    function eliminate(pl) { pl.isOut = true; pl.discards.push(pl.hand[0]); }
+    
+    function getTarget(me) {
         let targets = players.filter(pl => !pl.isOut && !pl.isProt && pl.id !== me);
-        return targets.length > 0 ? targets[0].id : null;
-    }
-
-    function checkGameOver() {
-        let alive = players.filter(pl => !pl.isOut);
-        if (alive.length <= 1) {
-            addLog(`🏁 遊戲結束！贏家是：${alive[0]?.name || "無人"}`, true);
-            isOver = true; updateUI(); return true;
-        }
-        return false;
-    }
-
-    function concludeGame() {
-        addLog("🏆 牌抽完了！比大小決定贏家。");
-        isOver = true; updateUI();
+        if (targets.length === 0) return null;
+        if (players[me].isNPC) return targets[Math.floor(Math.random()*targets.length)].id;
+        let input = prompt(`選目標編號 (${targets.map(t=>t.id).join(",")})`);
+        return (input !== null && players[input] && !players[input].isOut) ? parseInt(input) : null;
     }
 
     function updateUI() {
-        document.getElementById('deck-info').innerText = `🎴 剩餘牌數: ${deck.length}`;
-        document.getElementById('dir-info').innerText = `🔄 方向: ${dir === 1 ? '順時針' : '逆時針'}`;
-        const container = document.getElementById('players');
+        document.getElementById('deck-count').innerText = `🎴 剩餘: ${deck.length}`;
+        document.getElementById('dir-text').innerText = dir === 1 ? '順時針 ↻' : '逆時針 ↺';
+        const container = document.getElementById('seats-container');
         container.innerHTML = "";
 
+        const total = players.length;
+        const radius = 300; // 圓形半徑
+
         players.forEach((p, i) => {
-            const div = document.createElement('div');
-            div.className = `p-box ${p.isOut ? 'out' : ''} ${i === currentIdx ? 'active' : ''}`;
+            // 計算每個人的圓形位置
+            const angle = (i * (360 / total) - 90) * (Math.PI / 180);
+            const x = 50 + (radius / window.innerWidth * 100) * Math.cos(angle);
+            const y = 50 + (radius / window.innerHeight * 100) * Math.sin(angle);
+
+            const seat = document.createElement('div');
+            seat.className = `player-seat ${p.isOut ? 'out' : ''} ${i === currentIdx ? 'active' : ''}`;
+            seat.style.left = x + "%";
+            seat.style.top = y + "%";
+
+            let html = `<div class="p-info"><b>${p.name} (ID:${i})</b> ${p.isProt ? '🛡️' : ''}</div>`;
             
-            let html = `<h3 style="margin:0 0 10px 0; color:${p.isOut ? '#777' : 'white'}">${p.name} ${p.isProt ? '🛡️' : ''}</h3>`;
-            
-            // 顯示當前手牌 (真人可見, NPC不可見)
-            html += `<div style="min-height:140px">`;
-            if (p.isOut) {
-                html += `<div style="font-size:12px; color:var(--red)">OUT (手中曾持有 ${p.lastHand?.name})</div>`;
-            } else if (i === 0) { // 你
-                p.hand.forEach((c, ci) => {
-                    html += `<div class="card" style="background-image:url(${getCardImg(c.v)})" onclick="playCard(0,${ci})"><div class="card-val">${c.v}</div></div>`;
-                });
-            } else { // NPC
-                p.hand.forEach(() => {
-                    html += `<div class="card" style="background-image:url(${CARD_BACK}); cursor:default"></div>`;
-                });
-            }
+            // 手牌區
+            html += `<div style="margin-bottom:10px">`;
+            if (!p.isOut) {
+                if (i === 0) {
+                    p.hand.forEach((c, ci) => {
+                        html += `<div class="card" style="background-image:url(${getCardImg(c.v)})" onclick="playCard(0,${ci})"><div class="card-val">${c.v}</div></div>`;
+                    });
+                } else {
+                    p.hand.forEach(() => { html += `<div class="card" style="background-image:url(${CARD_BACK}); cursor:default"></div>`; });
+                }
+            } else { html += `<div style="color:red; font-weight:bold;">OUT</div>`; }
             html += `</div>`;
 
-            // 重點：顯示棄牌區 (丟出的圖片)
+            // 棄牌區 (顯示在正前方)
             html += `<div class="discard-pile">`;
-            p.discards.forEach(card => {
-                html += `<div class="small-card" style="background-image:url(${getCardImg(card.v)})" title="${card.name}"></div>`;
+            p.discards.forEach(c => {
+                html += `<div class="discard-card" style="background-image:url(${getCardImg(c.v)})" title="${c.name}"></div>`;
             });
             html += `</div>`;
 
-            div.innerHTML = html;
-            container.appendChild(div);
+            seat.innerHTML = html;
+            container.appendChild(seat);
         });
     }
 
@@ -267,6 +253,7 @@
         d.innerHTML = `> ${m}`;
         l.prepend(d);
     }
+    function concludeGame() { isOver = true; updateUI(); }
 </script>
 
 </body>
