@@ -3,11 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>情書：響應式經典版</title>
+    <title>情書：響應式功能增強版</title>
     <style>
         :root { 
             --red: #e74c3c; --dark: #0a0a0a; --gold: #f1c40f;
-            /* 動態卡牌尺寸：大螢幕 75px，小螢幕 55px */
             --card-w: clamp(55px, 12vw, 75px); 
             --card-h: clamp(80px, 18vw, 105px); 
         }
@@ -28,10 +27,14 @@
             width: 100%; max-width: 250px; font-weight: bold;
         }
         .btn-primary { border-color: var(--red); color: var(--red); }
+
+        /* 規則清單 */
         .rule-content { 
             text-align: left; max-width: 400px; background: #111; padding: 20px; 
             border-radius: 10px; font-size: 0.9rem; overflow-y: auto; margin-bottom: 20px;
+            border: 1px solid #444;
         }
+        .rule-item { margin-bottom: 8px; border-bottom: 1px solid #222; padding-bottom: 4px; }
 
         /* --- 遊戲主區域 --- */
         .game-world { 
@@ -40,26 +43,32 @@
             overflow: hidden; touch-action: none;
         }
         
-        /* 側邊日誌：手機上隱藏或縮小 */
         .side-log { 
             width: 200px; background: #050505; border-left: 1px solid #333; 
             display: flex; flex-direction: column; padding: 10px; z-index: 10;
         }
-        @media (max-width: 768px) { .side-log { display: none; } } /* 手機隱藏日誌避免太擠 */
+        @media (max-width: 768px) { .side-log { display: none; } }
 
         #log { flex: 1; overflow-y: auto; font-size: 12px; display: flex; flex-direction: column-reverse; }
 
-        /* --- 玩家排版系統 --- */
+        /* 角色功能總覽按鈕 (常駐) */
+        #help-btn {
+            position: absolute; bottom: 20px; left: 20px; z-index: 100;
+            background: rgba(0,0,0,0.6); border: 1px solid var(--gold);
+            color: var(--gold); padding: 8px 15px; border-radius: 20px;
+            font-size: 14px; cursor: pointer;
+        }
+
+        /* 玩家排版 */
         .player-seat { 
             position: absolute; transform: translate(-50%, -50%); 
             display: flex; align-items: center; justify-content: center; 
             width: fit-content; transition: all 0.5s ease;
         }
-
         .p-info { 
             order: 2; margin-left: 8px; background: rgba(20, 20, 40, 0.9); 
             padding: 4px 10px; border-radius: 12px; border: 1.5px solid #444; 
-            font-size: 12px; white-space: nowrap; 
+            font-size: 11px; white-space: nowrap; 
         }
         .active .p-info { border-color: var(--gold); box-shadow: 0 0 10px var(--gold); }
         .out { opacity: 0.4; filter: grayscale(1); }
@@ -97,47 +106,48 @@
 <body>
 
 <div id="screen-home" class="overlay-screen">
-    <h1 style="color: var(--gold); margin-bottom: 40px;">💌 情書</h1>
+    <h1 style="color: var(--gold); margin-bottom: 40px; letter-spacing: 5px;">💌 情書</h1>
     <button class="btn" onclick="switchScreen('screen-rules')">察看規則</button>
     <button class="btn btn-primary" onclick="switchScreen('screen-setup')">開始遊戲</button>
 </div>
 
 <div id="screen-rules" class="overlay-screen hidden">
-    <h2>遊戲規則</h2>
+    <h2 style="color: var(--gold);">角色功能總覽</h2>
     <div class="rule-content">
-        <p><b>(8) 公主:</b> 棄掉即淘汰。</p>
-        <p><b>(7) 伯爵夫人:</b> 若手上有王子或國王則必打出。</p>
-        <p><b>(6) 國王:</b> 交換手牌。</p>
-        <p><b>(5) 王子:</b> 指定棄牌並重抽。</p>
-        <p><b>(4) 侍女:</b> 保護一輪。</p>
-        <p><b>(3) 男爵:</b> 比點數，小者淘汰。</p>
-        <p><b>(2) 神父:</b> 看手牌。</p>
-        <p><b>(1) 衛兵:</b> 猜對方手牌點數。</p>
+        <div class="rule-item"><b>(8) 公主:</b> 棄掉此牌即淘汰。</div>
+        <div class="rule-item"><b>(7) 伯爵夫人:</b> 若手上有王子或國王必打出。</div>
+        <div class="rule-item"><b>(6) 國王:</b> 與一名玩家交換手牌。</div>
+        <div class="rule-item"><b>(5) 王子:</b> 指定一名玩家棄牌並重抽。</div>
+        <div class="rule-item"><b>(4) 侍女:</b> 保護自己一輪，不受效果影響。</div>
+        <div class="rule-item"><b>(3) 男爵:</b> 與玩家私下比牌，小者淘汰。</div>
+        <div class="rule-item"><b>(2) 神父:</b> 私下查看一名玩家的手牌。</div>
+        <div class="rule-item"><b>(1) 衛兵:</b> 猜一名玩家的牌（不可猜1），對則淘汰。</div>
     </div>
-    <button class="btn" onclick="switchScreen('screen-home')">返回首頁</button>
+    <button class="btn" onclick="closeRules()">關閉</button>
 </div>
 
 <div id="screen-setup" class="overlay-screen hidden">
     <h2>遊戲設定</h2>
     <p>設定人數 (2-8人)</p>
-    <input type="number" id="pCount" value="4" min="2" max="8" style="padding:10px; width:80px; text-align:center; font-size:20px; border-radius:5px;">
+    <input type="number" id="pCount" value="4" min="2" max="8" style="padding:10px; width:80px; text-align:center; font-size:20px;">
     <br>
     <button class="btn btn-primary" onclick="bootGame()">進入牌局</button>
-    <button class="btn" onclick="switchScreen('screen-home')">取消</button>
+    <button class="btn" onclick="switchScreen('screen-home')">返回</button>
 </div>
 
 <div id="announcer">
     <div class="announce-text" id="announce-main"></div>
-    <div id="announce-sub" style="margin-bottom:20px; color:#aaa;"></div>
-    <button class="btn" onclick="closeAnnounce()" style="width:120px; padding:8px;">確認</button>
+    <div id="announce-sub" style="margin-bottom:20px; color:#aaa; font-size: 14px;"></div>
+    <button class="btn" onclick="closeAnnounce()" style="width:120px; padding:8px; font-size:16px;">確認</button>
 </div>
 
 <div class="game-world" id="main" style="display: none;">
+    <button id="help-btn" onclick="switchScreen('screen-rules')">📜 角色功能</button>
     <div id="seats-container"></div>
 </div>
 
 <div class="side-log" id="side-log" style="display: none;">
-    <div style="font-weight:bold; color:var(--gold); border-bottom:1px solid #333; margin-bottom:5px;">日誌</div>
+    <div style="font-weight:bold; color:var(--gold); border-bottom:1px solid #333; margin-bottom:5px;">遊戲日誌</div>
     <div id="log"></div>
 </div>
 
@@ -151,11 +161,16 @@
     const getCardImg = (v) => v ? `card${v}.png?v=${ts}` : `card_back.png?v=${ts}`; 
     const CARD_BACK = `card_back.png?v=${ts}`;
 
+    const CARD_POOL = [1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8];
+    const CARD_NAMES = ["","衛兵","神父","男爵","侍女","王子","國王","伯爵夫人","公主"];
+
     let deck = [], players = [], currentIdx = 0, isOver = false, busy = false, resolveAction = null;
 
     function switchScreen(id) {
-        document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
         document.getElementById(id).classList.remove('hidden');
+    }
+    function closeRules() {
+        document.getElementById('screen-rules').classList.add('hidden');
     }
 
     function announce(main, sub) {
@@ -172,35 +187,39 @@
 
     function bootGame() {
         const num = parseInt(document.getElementById('pCount').value);
+        deck = CARD_POOL.map(v => ({v, name: CARD_NAMES[v]})).sort(() => Math.random() - 0.5);
         players = Array.from({length: num}, (_, i) => ({
             id: i, name: i === 0 ? "你" : `NPC ${i}`,
-            hand: [], lastDiscard: null, isOut: false, isProt: false, isNPC: i !== 0
+            hand: [deck.pop()], lastDiscard: null, isOut: false, isProt: false, isNPC: i !== 0
         }));
-        initDeck();
-        switchScreen('dummy'); // 隱藏所有選單
+        
+        document.querySelectorAll('.overlay-screen').forEach(s => s.classList.add('hidden'));
         document.getElementById('main').style.display = 'block';
         document.getElementById('side-log').style.display = 'flex';
-        players.forEach(p => p.hand = [deck.pop()]);
+        updateUI();
         startTurn();
-    }
-
-    function initDeck() {
-        const data = [1,1,1,1,1,2,2,3,3,4,4,5,5,6,7,8]; // 簡化版張數
-        deck = data.map(v => ({v, name: ["","衛兵","神父","男爵","侍女","王子","國王","伯爵夫人","公主"][v]}));
-        deck.sort(() => Math.random() - 0.5);
     }
 
     async function startTurn() {
         if (isOver) return;
+        busy = false;
         let p = players[currentIdx];
         p.isProt = false;
-        if (deck.length > 0) p.hand.push(deck.pop()); else { concludeGame(); return; }
+        
+        if (deck.length > 0) {
+            p.hand.push(deck.pop());
+        } else {
+            concludeGame(); return;
+        }
+        
         updateUI();
         if (p.isNPC) setTimeout(() => npcPlay(p), 1000);
     }
 
     function npcPlay(p) {
-        playCard(p.id, 0); // NPC 簡單出第一張
+        // NPC 簡單邏輯：不丟公主即可
+        let idx = p.hand[0].v === 8 ? 1 : 0;
+        playCard(p.id, idx);
     }
 
     async function playCard(pIdx, cIdx) {
@@ -210,22 +229,34 @@
         let card = p.hand.splice(cIdx, 1)[0];
         p.lastDiscard = card;
         updateUI();
-        await announce(p.name, `打出了 ${card.name}`);
-        
-        // 此處簡化邏輯，僅供演示排版
-        if (card.v === 8) { await announce("淘汰", "棄掉了公主"); p.isOut = true; }
+        addLog(`${p.name} 打出 ${card.name}`);
+        await announce(p.name, `打出了 [${card.name}]`);
+
+        // 簡易功能執行
+        if (card.v === 8) {
+            await announce("淘汰", `${p.name} 棄掉公主！`);
+            p.isOut = true;
+        } else if (card.v === 4) {
+            await announce("侍女", `${p.name} 進入保護狀態`);
+            p.isProt = true;
+        } else if (card.v === 2 && !p.isNPC) {
+            // 示範神父在新手模式下的提示
+            let target = players.find(pl => !pl.isOut && pl.id !== p.id);
+            if(target) await announce("神父偵查", `${target.name} 的牌是 [${target.hand[0].name}]`);
+        }
         
         finishTurn();
     }
 
     function finishTurn() {
-        busy = false;
         let alives = players.filter(pl => !pl.isOut);
-        if (alives.length <= 1) { 
-            announce("遊戲結束", `贏家: ${alives[0]?.name}`); 
-            isOver = true; return; 
+        if (alives.length <= 1) {
+            announce("遊戲結束", `贏家是：${alives[0]?.name}`);
+            isOver = true; return;
         }
-        do { currentIdx = (currentIdx + 1) % players.length; } while (players[currentIdx].isOut);
+        do {
+            currentIdx = (currentIdx + 1) % players.length;
+        } while (players[currentIdx].isOut);
         updateUI();
         startTurn();
     }
@@ -234,11 +265,9 @@
         const container = document.getElementById('seats-container');
         container.innerHTML = "";
         const total = players.length;
-        
-        // 核心：響應式半徑計算
         const isMobile = window.innerWidth < 768;
-        const rx = isMobile ? 38 : 30; // 手機水平佔比較多
-        const ry = isMobile ? 32 : 35; // 手機垂直留空間給 UI
+        const rx = isMobile ? 38 : 30;
+        const ry = isMobile ? 30 : 35;
 
         players.forEach((p, i) => {
             const angle = (i * (360 / total) - 90) * (Math.PI / 180);
@@ -250,7 +279,7 @@
             seat.style.left = x + "%"; seat.style.top = y + "%";
 
             seat.innerHTML = `
-                <div class="p-info">ID:${i} ${p.name}</div>
+                <div class="p-info">${p.name} ${p.isProt?'🛡️':''}</div>
                 <div class="card-zone">
                     <div class="hand">
                         ${!p.isOut ? p.hand.map((c, ci) => `
@@ -276,7 +305,6 @@
         l.prepend(d);
     }
 
-    window.onresize = updateUI; // 視窗縮放時重繪
+    window.onresize = updateUI;
 </script>
 </body>
-</html>
